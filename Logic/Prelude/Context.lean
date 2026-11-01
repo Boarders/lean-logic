@@ -61,6 +61,18 @@ def comp {Γ Δ Θ : Ctx α} : Ren Δ Θ → Ren Γ Δ → Ren Γ Θ
   | Z => rfl
   | S x ih => exact congrArg Mem.S ih
 
+@[simp] theorem var_keep_Z {Γ Δ : Ctx α} {a : α} (ρ : Ren Γ Δ) :
+    (keep (a := a) ρ).var .Z = .Z := rfl
+
+@[simp] theorem var_keep_S {Γ Δ : Ctx α} {a b : α} (ρ : Ren Γ Δ) (x : b ∈ᵥ Γ) :
+    (keep (a := a) ρ).var (.S x) = .S (ρ.var x) := rfl
+
+@[simp] theorem var_drop {Γ Δ : Ctx α} {a b : α} (ρ : Ren Γ Δ) (x : b ∈ᵥ Γ) :
+    (drop (a := a) ρ).var x = .S (ρ.var x) := rfl
+
+@[simp] theorem var_wk {Γ : Ctx α} {a b : α} (x : b ∈ᵥ Γ) : (wk (a := a)).var x = .S x := by
+  simp [wk]
+
 @[simp] theorem var_comp {Γ Δ Θ : Ctx α} (σ : Ren Δ Θ) (ρ : Ren Γ Δ) {a : α} (x : a ∈ᵥ Γ) :
     (σ.comp ρ).var x = σ.var (ρ.var x) := by
   induction σ generalizing Γ with
