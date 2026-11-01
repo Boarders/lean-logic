@@ -1,5 +1,3 @@
-import Logic.Prelude.Context
-import Mathlib.Order.Defs.LinearOrder
 
 namespace Logic.Propositional
 
@@ -65,47 +63,5 @@ instance : LawfulMonad Formula := LawfulMonad.mk' _
   (id_map := bind_atom)
   (pure_bind := fun _ _ => rfl)
   (bind_assoc := bind_bind)
-
-inductive LogicalStrength where
-  | minimal | intuitionistic | classical
-  deriving DecidableEq
-
-namespace LogicalStrength
-
-def le : LogicalStrength → LogicalStrength → Bool
-  | minimal, _ => true
-  | intuitionistic, minimal => false
-  | intuitionistic, _ => true
-  | classical, classical => true
-  | classical, _ => false
-
-instance : LE LogicalStrength := ⟨fun a b => le a b⟩
-instance : DecidableRel (α := LogicalStrength) (· ≤ ·) :=
-  fun a b => inferInstanceAs (Decidable (le a b))
-
-instance : LinearOrder LogicalStrength where
-  le_refl a := by cases a <;> decide
-  le_trans a b c := by cases a <;> cases b <;> cases c <;> decide
-  le_antisymm a b := by cases a <;> cases b <;> decide
-  le_total a b := by cases a <;> cases b <;> decide
-  toDecidableLE := inferInstance
-
-end LogicalStrength
-
-inductive Pf {α : Type} : Ctx (Formula α) → (s : LogicalStrength) → Formula α → Type where
-  | hyp : ∀ {Γ φ}, φ ∈ᵥ Γ → Pf Γ s φ
-  | ttI : ∀ {Γ}, Pf Γ s .tt
-  | andI : ∀ {Γ φ ψ}, Pf Γ s φ → Pf Γ s ψ → Pf Γ s (φ ∧ₚ ψ)
-  | andE₁ : ∀ {Γ φ ψ}, Pf Γ s (φ ∧ₚ ψ) → Pf Γ s φ
-  | andE₂ : ∀ {Γ φ ψ}, Pf Γ s (φ ∧ₚ ψ) → Pf Γ s ψ
-  | orI₁ : ∀ {Γ φ ψ}, Pf Γ s φ → Pf Γ s (φ ∨ₚ ψ)
-  | orI₂ : ∀ {Γ φ ψ}, Pf Γ s ψ → Pf Γ s (φ ∨ₚ ψ)
-  | orE : ∀ {Γ φ ψ χ}, Pf Γ s (φ ∨ₚ ψ) → Pf (Γ ▹ φ) s χ → Pf (Γ ▹ ψ) s χ → Pf Γ s χ
-  | impI : ∀ {Γ φ ψ}, Pf (Γ ▹ φ) s ψ → Pf Γ s (φ ⇒ₚ ψ)
-  | impE : ∀ {Γ φ ψ}, Pf Γ s (φ ⇒ₚ ψ) → Pf Γ s φ → Pf Γ s ψ
-  | notI : ∀ {Γ φ}, Pf (Γ ▹ φ) s .ff → Pf Γ s (¬ₚ φ)
-  | notE : ∀ {Γ φ}, Pf Γ s (¬ₚ φ) → Pf Γ s φ → Pf Γ s .ff
-  | lem : ∀ {Γ φ}, .classical ≤ s → Pf Γ s (φ ∨ₚ ¬ₚ φ)
-  | ex_falso : ∀ {Γ φ}, .intuitionistic ≤ s → Pf Γ s .ff → Pf Γ s φ
 
 end Logic.Propositional
