@@ -23,6 +23,28 @@ inductive Mem {α : Type u} : α → Ctx α → Type u where
 
 scoped infix:50 " ∈ᵥ " => Mem
 
+namespace Mem
+
+variable {α : Type u}
+
+/-- Forget which occurrence an index points to. -/
+def toMem {a : α} : ∀ {Γ : Ctx α}, a ∈ᵥ Γ → a ∈ Γ
+  | _, .Z => List.mem_cons_self
+  | _, .S x => List.Mem.tail _ x.toMem
+
+/-- Find the newest occurrence of `a` in `Γ`. -/
+def ofMem [DecidableEq α] {a : α} : ∀ {Γ : Ctx α}, a ∈ Γ → a ∈ᵥ Γ
+  | [], h => absurd h List.not_mem_nil
+  | b :: _, h =>
+    if hab : a = b then hab ▸ .Z else .S (ofMem (List.mem_of_ne_of_mem hab h))
+
+end Mem
+
+/-- Close a goal `a ∈ᵥ Γ` when `a` occurs in `Γ`, choosing the newest occurrence. -/
+syntax "find_mem" : tactic
+macro_rules
+  | `(tactic| find_mem) => `(tactic| first | exact Logic.Mem.Z | (apply Logic.Mem.S; find_mem))
+
 variable {α : Type u}
 
 /-- Order-preserving embeddings (thinnings): `Ren Γ Δ` says `Γ` is a subsequence of `Δ`. -/
@@ -43,6 +65,12 @@ abbrev lift {Γ Δ : Ctx α} {a : α} (ρ : Ren Γ Δ) : Ren (Γ ▹ a) (Δ ▹ 
 /-- The one-step weakening `Γ ⊆ Γ ▹ a`. -/
 abbrev wk {Γ : Ctx α} {a : α} : Ren Γ (Γ ▹ a) := drop (id Γ)
 
+/-- Weakening by a whole context of newer entries: `Γ ⊆ Δ ++ Γ`. -/
+def wkCtx (Δ : Ctx α) {Γ : Ctx α} : Ren Γ (Δ ++ Γ) :=
+  match Δ with
+  | [] => id Γ
+  | _ :: Δ => drop (wkCtx Δ)
+
 /-- Act on a variable. -/
 def var {Γ Δ : Ctx α} {a : α} : Ren Γ Δ → a ∈ᵥ Γ → a ∈ᵥ Δ
   | keep _, .Z => .Z
@@ -60,6 +88,7 @@ def comp {Γ Δ Θ : Ctx α} : Ren Δ Θ → Ren Γ Δ → Ren Γ Θ
   induction x with
   | Z => rfl
   | S x ih => exact congrArg Mem.S ih
+
 
 @[simp] theorem var_keep_Z {Γ Δ : Ctx α} {a : α} (ρ : Ren Γ Δ) :
     (keep (a := a) ρ).var .Z = .Z := rfl
@@ -110,6 +139,9 @@ theorem comp_assoc {Γ Δ Θ Ξ : Ctx α} (τ : Ren Θ Ξ) (σ : Ren Δ Θ) (ρ 
       | drop ρ => exact congrArg drop (ih σ ρ)
     | drop σ => exact congrArg drop (ih σ ρ)
   | drop τ ih => exact congrArg drop (ih σ ρ)
+
+@[simp] theorem keep_comp_keep {Γ Δ Θ : Ctx α} {a : α} (σ : Ren Δ Θ) (ρ : Ren Γ Δ) :
+    (keep (a := a) σ).comp (keep ρ) = keep (σ.comp ρ) := rfl
 
 end Ren
 
