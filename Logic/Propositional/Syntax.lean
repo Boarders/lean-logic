@@ -1,8 +1,8 @@
-
 namespace Logic.Propositional
 
 inductive BinOp where
   | or | and | implies : BinOp
+  deriving DecidableEq
 
 inductive Formula (α : Type) where
   | atom : α → Formula α
@@ -10,6 +10,7 @@ inductive Formula (α : Type) where
   | not : Formula α → Formula α
   | ff   : Formula α
   | tt : Formula α
+  deriving DecidableEq
 
 /-! Precedences follow Lean's own: `¬` 40, `∧` 35, `∨` 30, `→` 25; binary ones right-associative. -/
 scoped notation:max "¬ₚ " φ:40 => Formula.not φ
@@ -63,5 +64,6 @@ instance : LawfulMonad Formula := LawfulMonad.mk' _
   (id_map := bind_atom)
   (pure_bind := fun _ _ => rfl)
   (bind_assoc := bind_bind)
+
 
 end Logic.Propositional
